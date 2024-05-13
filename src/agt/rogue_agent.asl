@@ -3,6 +3,17 @@
 /* Initial beliefs and rules */
 // initially, the agent believes that it hasn't received any temperature readings
 received_readings([]).
+all_present_agents_witness_ratings[
+  [sensing_agent_1, -1],
+  [sensing_agent_2, -1],
+  [sensing_agent_3, -1],
+  [sensing_agent_4, -1],
+  [sensing_agent_5, 1],
+  [sensing_agent_6, 1],
+  [sensing_agent_7, 1],
+  [sensing_agent_8, 1],
+  [sensing_agent_9, 1]
+].
 
 /* Initial goals */
 !set_up_plans. // the agent has the goal to add pro-rogue plans
@@ -13,13 +24,17 @@ received_readings([]).
  * Context: true (the plan is always applicable)
  * Body: adds pro-rogue plans for reading the temperature without using a weather station
 */
-+!set_up_plans : true
-<-
++!set_up_plans : all_present_agents_witness_ratings(WR) <-
+
   // removes plans for reading the temperature with the weather station
   .relevant_plans({ +!read_temperature }, _, LL);
   .remove_plan(LL);
   .relevant_plans({ -!read_temperature }, _, LL2);
   .remove_plan(LL2);
+
+  .print(WR);
+  for
+    .broadcast(tell, witness_reputation(N, sensing_agent_1, "Distrust!!", -1));
 
   // adds a new plan for reading the temperature that doesn't require contacting the weather station
   // the agent will pick one of the first three temperature readings that have been broadcasted,

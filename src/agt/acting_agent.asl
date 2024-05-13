@@ -82,7 +82,11 @@ robot_td("https://raw.githubusercontent.com/Interactions-HSG/example-tds/main/td
 */
 @select_reading_task_0_plan
 +!select_reading(TempReadings, Celcius) : true <-
-    .nth(0, TempReadings, Celcius).
+	.print("Selecting the temperature reading from the agent with the highest trust.");
+	.findall([SourceAgent, TargetAgent, MessageContent, ITRating], interaction_trust(SourceAgent, TargetAgent, MessageContent, ITRating), ITList);
+	makeArtifact("trustCalculator", "tools.TrustCalculator", [], TrustCalculatorId);
+	calculateHighestAvgInteractionTrust(ITList, Temp)[artifact_id(TrustCalculatorId)];
+	.print("Selected temperature: ", Temp).
 
 /* 
  * Plan for reacting to the addition of the goal !manifest_temperature
@@ -94,6 +98,8 @@ robot_td("https://raw.githubusercontent.com/Interactions-HSG/example-tds/main/td
 */
 @manifest_temperature_plan 
 +!manifest_temperature : temperature(Celcius) & robot_td(Location) <-
+	.findall(TempReading, temperature(C), TempReadings);
+	!select_reading(TempReadings, Celcius);
 	.print("I will manifest the temperature: ", Celcius);
 	makeArtifact("covnerter", "tools.Converter", [], ConverterId); // creates a converter artifact
 	convert(Celcius, -20.00, 20.00, 200.00, 830.00, Degrees)[artifact_id(ConverterId)]; // converts Celcius to binary degress based on the input scale

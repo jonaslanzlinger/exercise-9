@@ -5,7 +5,7 @@ import cartago.*;
 public class TrustCalculator extends Artifact {
 
   @OPERATION
-  public void calculateHighestAvgInteractionTrust(Object[] interactionTrustList,
+  public void getTemperatureByInteractionTrust(Object[] interactionTrustList,
       OpFeedbackParam<Double> temperature) {
 
     for (Object entry : interactionTrustList) {

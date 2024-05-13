@@ -85,7 +85,7 @@ robot_td("https://raw.githubusercontent.com/Interactions-HSG/example-tds/main/td
 	.print("Selecting the temperature reading from the agent with the highest trust.");
 	.findall([SourceAgent, TargetAgent, MessageContent, ITRating], interaction_trust(SourceAgent, TargetAgent, MessageContent, ITRating), ITList);
 	makeArtifact("trustCalculator", "tools.TrustCalculator", [], TrustCalculatorId);
-	calculateHighestAvgInteractionTrust(ITList, Temp)[artifact_id(TrustCalculatorId)];
+	getTemperatureByInteractionTrust(ITList, Temp)[artifact_id(TrustCalculatorId)];
 	.print("Selected temperature: ", Temp).
 
 /* 

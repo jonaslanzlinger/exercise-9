@@ -83,12 +83,24 @@ robot_td("https://raw.githubusercontent.com/Interactions-HSG/example-tds/main/td
 */
 @select_reading_task_0_plan
 +!select_reading(TempReadings, Celcius) : true <-
-	.print("Selecting the temperature reading from the agent with the highest trust.");
+	.print("Ask the agents for their references. (1 second timehout)");
+	.findall([Agent, Mission], commitment(Agent,Mission,_), CommitmentList);
+	for ( .member([Agent, Mission], CommitmentList) ) {
+		if (Mission == temperature_reading_mission) {
+			.send(Agent, askOne, certified_reputation(_,_,_,CRRating));
+		}
+	};
+	.wait(1000);
+	.findall([SourceAgent, TargetAgent, MessageContent, CRRating], certified_reputation(SourceAgent, TargetAgent, MessageContent, CRRating), CRList);
 	.findall([SourceAgent, TargetAgent, MessageContent, ITRating], interaction_trust(SourceAgent, TargetAgent, MessageContent, ITRating), ITList);
 	makeArtifact("trustCalculator", "tools.TrustCalculator", [], TrustCalculatorId);
-	getTemperatureByInteractionTrust(ITList, SelectedTemp)[artifact_id(TrustCalculatorId)];
-	.print("Selected temperature: ", SelectedTemp);
-	-+selectedTemp(SelectedTemp).
+	.print(.length(CRList), " certified reputation ratings and ", .length(ITList), " interaction trust ratings received.");
+	getHighest_IT_AVG_Temp(ITList, SelectedAgent)[artifact_id(TrustCalculatorId)];
+	.print("Selected trustworthy agent: ", SelectedAgent);
+	.findall(TempReading, temperature(TempReading)[source(sensing_agent_1)], TempList);
+	.nth(0, TempList, Temp);
+	.print("Selected trustworthy temperature reading: ", Temp);
+	-+selectedTemp(Temp).
 
 /* 
  * Plan for reacting to the addition of the goal !manifest_temperature

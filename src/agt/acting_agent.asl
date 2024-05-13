@@ -83,19 +83,38 @@ robot_td("https://raw.githubusercontent.com/Interactions-HSG/example-tds/main/td
 */
 @select_reading_task_0_plan
 +!select_reading(TempReadings, Celcius) : true <-
-	.print("Ask the agents for their references. (1 second timehout)");
+
+	// Ask the agents for their references. (1 second timeout)
 	.findall([Agent, Mission], commitment(Agent,Mission,_), CommitmentList);
 	for ( .member([Agent, Mission], CommitmentList) ) {
 		if (Mission == temperature_reading_mission) {
-			.send(Agent, askOne, certified_reputation(_,_,_,CRRating));
+			.send(Agent, askAll, certified_reputation(_,_,_,_));
 		}
 	};
 	.wait(1000);
-	.findall([SourceAgent, TargetAgent, MessageContent, CRRating], certified_reputation(SourceAgent, TargetAgent, MessageContent, CRRating), CRList);
+
+	// Get all the relevant ratings
 	.findall([SourceAgent, TargetAgent, MessageContent, ITRating], interaction_trust(SourceAgent, TargetAgent, MessageContent, ITRating), ITList);
+	.findall([SourceAgent, TargetAgent, MessageContent, CRRating], certified_reputation(SourceAgent, TargetAgent, MessageContent, CRRating), CRList);
+	.findall([SourceAgent, TargetAgent, MessageContent, WRRating], witness_reputation(SourceAgent, TargetAgent, MessageContent, WRRating), WRList);
+
+	.print("Received ", .length(ITList), " interaction trust ratings, ", .length(CRList), " certified reputation ratings, and ", .length(WRList), " witness reputation ratings.");
+
+	// Calculate the final trust rating, based on different types of ratings
 	makeArtifact("trustCalculator", "tools.TrustCalculator", [], TrustCalculatorId);
-	.print(.length(CRList), " certified reputation ratings and ", .length(ITList), " interaction trust ratings received.");
-	getHighest_IT_AVG_Temp(ITList, SelectedAgent)[artifact_id(TrustCalculatorId)];
+
+	// Task 1 - Use this function to determine the most trustworthy temperature reading
+	// (based on the interaction trust ratings)
+	// getHighest_IT_AVG_Agent(ITList, SelectedAgent)[artifact_id(TrustCalculatorId)];
+
+	// Task 3 - Use this function to determine the most trustworthy temperature reading
+	// (base on the interaction trust ratings and certified reputation ratings)
+	// getHighest_IT_CR_Agent(ITList, CRList, SelectedAgent)[artifact_id(TrustCalculatorId)];
+
+	// Task 4 - Use this function to determine the most trustworthy temperature reading
+	// (based on the interaction trust ratings and certified reputation ratings and witness reputation ratings)
+	getHighest_IT_CR_WR_Agent(ITList, CRList, WRList, SelectedAgent)[artifact_id(TrustCalculatorId)];
+
 	.print("Selected trustworthy agent: ", SelectedAgent);
 	.findall(TempReading, temperature(TempReading)[source(sensing_agent_1)], TempList);
 	.nth(0, TempList, Temp);

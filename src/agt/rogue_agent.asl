@@ -3,17 +3,10 @@
 /* Initial beliefs and rules */
 // initially, the agent believes that it hasn't received any temperature readings
 received_readings([]).
-all_present_agents_witness_ratings[
-  [sensing_agent_1, -1],
-  [sensing_agent_2, -1],
-  [sensing_agent_3, -1],
-  [sensing_agent_4, -1],
-  [sensing_agent_5, 1],
-  [sensing_agent_6, 1],
-  [sensing_agent_7, 1],
-  [sensing_agent_8, 1],
-  [sensing_agent_9, 1]
-].
+all_present_agents_witness_ratings(
+  [sensing_agent_1, sensing_agent_2, sensing_agent_3, sensing_agent_4, sensing_agent_5, sensing_agent_6, sensing_agent_7, sensing_agent_8, sensing_agent_9],
+  [-1, -1, -1, -1, 1, 1, 1, 1, 1]
+).
 
 /* Initial goals */
 !set_up_plans. // the agent has the goal to add pro-rogue plans
@@ -24,7 +17,7 @@ all_present_agents_witness_ratings[
  * Context: true (the plan is always applicable)
  * Body: adds pro-rogue plans for reading the temperature without using a weather station
 */
-+!set_up_plans : all_present_agents_witness_ratings(WR) <-
++!set_up_plans : true <-
 
   // removes plans for reading the temperature with the weather station
   .relevant_plans({ +!read_temperature }, _, LL);
@@ -33,12 +26,17 @@ all_present_agents_witness_ratings[
   .remove_plan(LL2);
 
   .print("Rogue: Sending witness reputation to acting agent at startup.");
-  .print(WR);
-  for ( .member([TargetAgent, WRating], WR) ) {
-		if (TargetAgent /== .my_name()) {
-			.send(acting_agent, tell, witness_reputation(.my_name(), TargetAgent, WRating));
-		}
-	};
+  .findall([Agents, WRatings], all_present_agents_witness_ratings(Agents, WRatings), WRs);
+  .nth(0, WRs, WR);
+  .nth(0, WR, Agents);
+  .nth(1, WR, WRatings);
+  .my_name(Name);
+  for ( .range(I,0,8) ) {
+    .nth(I, Agents, Agent);
+    .nth(I, WRatings, WRating);
+    .print("Rogue: Sending witness reputation to acting agent: ", Agent, " ", WRating);
+    .send(acting_agent, tell, witness_reputation(Name, Agent, WRating));
+  };
 
   // adds a new plan for reading the temperature that doesn't require contacting the weather station
   // the agent will pick one of the first three temperature readings that have been broadcasted,

@@ -105,7 +105,7 @@ robot_td("https://raw.githubusercontent.com/Interactions-HSG/example-tds/main/td
 
 	// Task 1 - Use this function to determine the most trustworthy temperature reading agent
 	// (based on the interaction trust ratings)
-	// getHighest_IT_AVG_Agent(ITList, MostTrustworthyAgent)[artifact_id(TrustCalculatorId)];
+	getHighest_IT_AVG_Agent(ITList, MostTrustworthyAgent)[artifact_id(TrustCalculatorId)];
 
 	// Task 3 - Use this function to determine the most trustworthy temperature reading agent
 	// (base on the interaction trust ratings and certified reputation ratings)
@@ -113,7 +113,7 @@ robot_td("https://raw.githubusercontent.com/Interactions-HSG/example-tds/main/td
 
 	// Task 4 - Use this function to determine the most trustworthy temperature reading agent
 	// (based on the interaction trust ratings and certified reputation ratings and witness reputation ratings)
-	getHighest_IT_CR_WR_Agent(ITList, CRList, WRList, MostTrustworthyAgent)[artifact_id(TrustCalculatorId)];
+	// getHighest_IT_CR_WR_Agent(ITList, CRList, WRList, MostTrustworthyAgent)[artifact_id(TrustCalculatorId)];
 
 	.print("Selected most trustworthy agent: ", MostTrustworthyAgent);
 	.print(MostTrustworthyAgent);

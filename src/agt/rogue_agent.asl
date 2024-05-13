@@ -25,18 +25,23 @@ all_present_agents_witness_ratings(
   .relevant_plans({ -!read_temperature }, _, LL2);
   .remove_plan(LL2);
 
-  .print("Rogue: Sending witness reputation to acting agent at startup.");
-  .findall([Agents, WRatings], all_present_agents_witness_ratings(Agents, WRatings), WRs);
-  .nth(0, WRs, WR);
-  .nth(0, WR, Agents);
-  .nth(1, WR, WRatings);
-  .my_name(Name);
-  for ( .range(I,0,8) ) {
-    .nth(I, Agents, Agent);
-    .nth(I, WRatings, WRating);
-    .print("Rogue: Sending witness reputation to acting agent: ", Agent, " ", WRating);
-    .send(acting_agent, tell, witness_reputation(Name, Agent, WRating));
-  };
+  .add_plan({ +temperature(Celsius)[source(Sender)] : true <-
+    .print("Received temperature reading from ", Sender, ": ", Celsius);
+    // Sending witness_reputation to the acting agent
+    .findall([Agents, WRRatings], all_present_agents_witness_ratings(Agents, WRRatings), WRRatingsList);
+    .nth(0, WRRatingsList, WR);
+    .nth(0, WR, Agents);
+    .nth(1, WR, WRRatings);
+    .my_name(Name);
+    for ( .range(I,0,8) ) {
+      .nth(I, Agents, Agent);
+      .nth(I, WRRatings, WRRating);
+      if (Sender == Agent & Agent \== Name) {
+        .print("Sending witness reputation to acting_agent: witness_reputation(", Name, ", ", Agent, ", temperature(", Celsius, "), ", WRRating, ")");
+          .send(acting_agent, tell, witness_reputation(Name, Agent, temperature(Celsius), WRRating));
+      };
+    };
+  });
 
   // adds a new plan for reading the temperature that doesn't require contacting the weather station
   // the agent will pick one of the first three temperature readings that have been broadcasted,
@@ -74,9 +79,10 @@ all_present_agents_witness_ratings(
     // tries again to "read" the temperature
     !read_temperature });
   
-    // adds default plan for when a temperature reading has been received by an agent that is NOT the rogue leader agent
-  .add_plan({ +!read_temperature : received_readings(TempReadings) <-
-    .print("Rogue agent is only listening on temperature readings from the rogue leadger agent."); }).
+    // adds default plan for when the goal read_temperature has been received, but by an agent that is NOT the rogue leader agent
+  .add_plan({ +!read_temperature : received_readings(TempReadings)[source(Agent)] <-
+    .print("Rogue agent is only listening on temperature readings from the rogue leader agent.");
+  }).
 
 /* Import behavior of sensing agent */
 { include("sensing_agent.asl")}

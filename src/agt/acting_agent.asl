@@ -83,10 +83,18 @@ robot_td("https://raw.githubusercontent.com/Interactions-HSG/example-tds/main/td
 */
 @select_reading_task_0_plan
 +!select_reading(TempReadings, Celcius) : true <-
-	.print("Selecting the temperature reading from the agent with the highest trust.");
+	.print("Ask the agents for their references.");
+	.findall([Agent, Mission], commitment(Agent,Mission,_), CommitmentList);
+	for ( .member([Agent, Mission], CommitmentList) ) {
+		if (Mission == temperature_reading_mission) {
+			.send(Agent, askOne, certified_reputation(_,_,_,CRRating));
+		}
+	};
+	.wait(300);
+	.findall([SourceAgent, TargetAgent, MessageContent, CRRating], certified_reputation(SourceAgent, TargetAgent, MessageContent, CRRating), CRList);
 	.findall([SourceAgent, TargetAgent, MessageContent, ITRating], interaction_trust(SourceAgent, TargetAgent, MessageContent, ITRating), ITList);
 	makeArtifact("trustCalculator", "tools.TrustCalculator", [], TrustCalculatorId);
-	getTemperatureByInteractionTrust(ITList, SelectedTemp)[artifact_id(TrustCalculatorId)];
+	getHighest_IT_CR_Temp(ITList, CRList, SelectedTemp)[artifact_id(TrustCalculatorId)];
 	.print("Selected temperature: ", SelectedTemp);
 	-+selectedTemp(SelectedTemp).
 

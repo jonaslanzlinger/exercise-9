@@ -21,6 +21,10 @@ received_readings([]).
   .relevant_plans({ -!read_temperature }, _, LL2);
   .remove_plan(LL2);
 
+  .print("Rogue: Sending witness reputation to acting agent at startup.");
+  // TODO
+  // .send(acting_agent, witness_reputation(.my_name(), sensing_agent_1, "Distrust!!", -1));
+
   // adds a new plan for reading the temperature that doesn't require contacting the weather station
   // the agent will pick one of the first three temperature readings that have been broadcasted,
   // it will slightly change the reading, and broadcast it

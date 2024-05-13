@@ -1,6 +1,7 @@
 // acting agent
 
 /* Initial beliefs and rules */
+selectedTemp(0).
 
 // The agent has a belief about the location of the W3C Web of Thing (WoT) Thing Description (TD)
 // that describes a Thing of type https://ci.mines-stetienne.fr/kg/ontology#PhantomX
@@ -85,8 +86,9 @@ robot_td("https://raw.githubusercontent.com/Interactions-HSG/example-tds/main/td
 	.print("Selecting the temperature reading from the agent with the highest trust.");
 	.findall([SourceAgent, TargetAgent, MessageContent, ITRating], interaction_trust(SourceAgent, TargetAgent, MessageContent, ITRating), ITList);
 	makeArtifact("trustCalculator", "tools.TrustCalculator", [], TrustCalculatorId);
-	getTemperatureByInteractionTrust(ITList, Temp)[artifact_id(TrustCalculatorId)];
-	.print("Selected temperature: ", Temp).
+	getTemperatureByInteractionTrust(ITList, SelectedTemp)[artifact_id(TrustCalculatorId)];
+	.print("Selected temperature: ", SelectedTemp);
+	-+selectedTemp(SelectedTemp).
 
 /* 
  * Plan for reacting to the addition of the goal !manifest_temperature
@@ -100,9 +102,11 @@ robot_td("https://raw.githubusercontent.com/Interactions-HSG/example-tds/main/td
 +!manifest_temperature : temperature(Celcius) & robot_td(Location) <-
 	.findall(TempReading, temperature(C), TempReadings);
 	!select_reading(TempReadings, Celcius);
-	.print("I will manifest the temperature: ", Celcius);
+	.findall(T, selectedTemp(T), SelectedTempList);
+	.nth(0, SelectedTempList, SelectedTemp);
+	.print("I will manifest the temperature: ", SelectedTemp);
 	makeArtifact("covnerter", "tools.Converter", [], ConverterId); // creates a converter artifact
-	convert(Celcius, -20.00, 20.00, 200.00, 830.00, Degrees)[artifact_id(ConverterId)]; // converts Celcius to binary degress based on the input scale
+	convert(SelectedTemp, -20.00, 20.00, 200.00, 830.00, Degrees)[artifact_id(ConverterId)]; // converts Celcius to binary degress based on the input scale
 	.print("Temperature Manifesting (moving robotic arm to): ", Degrees);
 
 	/* 

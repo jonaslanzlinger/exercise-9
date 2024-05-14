@@ -1,10 +1,18 @@
 // sensing agent
 
 /* Initial beliefs and rules */
+// Here we store the witness ratings of the sensing agents
+// that they have for the other agents.
+// IMPORTANT: FOR TESTING PURPOSES, COMMENT OUT THE FOLLOWING BELIEF AND UNCOMMENT THE NEXT ONE
+// => TO SEE THAT IF THE SENSING AGENTS DISTRUST EACH OTHER, THE ROGUES WIN DUE TO THE WITNESS RATINGS
 all_present_agents_witness_ratings(
   [sensing_agent_1, sensing_agent_2, sensing_agent_3, sensing_agent_4, sensing_agent_5, sensing_agent_6, sensing_agent_7, sensing_agent_8, sensing_agent_9],
   [1, 1, 1, 1, -1, -1, -1, -1, -1]
 ).
+// all_present_agents_witness_ratings(
+//   [sensing_agent_1, sensing_agent_2, sensing_agent_3, sensing_agent_4, sensing_agent_5, sensing_agent_6, sensing_agent_7, sensing_agent_8, sensing_agent_9],
+//   [-1, -1, -1, -1, 1, 1, 1, 1, 1]
+// ).
 
 // infers whether there is a mission for which goal G has to be achieved by an agent with role R
 role_goal(R,G) :- role_mission(R,_,M) & mission_goal(M,G).
@@ -28,6 +36,9 @@ i_have_plans_for(R) :- not (role_goal(R,G) & not has_plan_for(G)).
 +!start : true <-
 	.print("Hello world").
 
+// Plan for reacting to the addition of the belief temperature(Celsius)
+// Sending witness_reputation to the acting agent depending on which agent sent the temperature reading
+@temperature_plan
 +temperature(Celsius)[source(Sender)] : true <-
 	.print("Received temperature reading from ", Sender, ": ", Celsius);
    // Sending witness_reputation to the acting agent

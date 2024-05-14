@@ -1,6 +1,8 @@
 // rogue leader agent is a type of sensing agent
 
 /* Initial beliefs & goals */
+// Here we store the witness ratings of the rogue leader agent
+// that it has for the other agents.
 all_present_agents_witness_ratings(
   [sensing_agent_1, sensing_agent_2, sensing_agent_3, sensing_agent_4, sensing_agent_5, sensing_agent_6, sensing_agent_7, sensing_agent_8, sensing_agent_9],
   [-1, -1, -1, -1, 1, 1, 1, 1, 1]
@@ -22,6 +24,8 @@ all_present_agents_witness_ratings(
   .relevant_plans({ -!read_temperature }, _, LL2);
   .remove_plan(LL2);
 
+  // adds a new plan for sending a witness_reputation to the acting agent,
+  // when the agent receives a temperature reading from another temperature reader agent.
   .add_plan({ +temperature(Celsius)[source(Sender)] : true <-
     .print("Received temperature reading from ", Sender, ": ", Celsius);
     // Sending witness_reputation to the acting agent

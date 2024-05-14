@@ -76,57 +76,58 @@ robot_td("https://raw.githubusercontent.com/Interactions-HSG/example-tds/main/td
 	.print("Witness Reputation Rating: (", WitnessAgent, ", ", SourceAgent, ", ", MessageContent, ", ", WRRating, ")").
 
 /* 
- * Plan for reacting to the addition of the goal !select_reading(TempReadings, Celcius)
- * Triggering event: addition of goal !select_reading(TempReadings, Celcius)
+ * Plan for reacting to the addition of the goal !select_reading(TempReadings)
+ * Triggering event: addition of goal !select_reading(TempReadings)
  * Context: true (the plan is always applicable)
- * Body: unifies the variable Celcius with the 1st temperature reading from the list TempReadings
+ * Body: Selects a temperature reading agent based on various trust/reputation ratings
 */
-@select_reading_task_0_plan
-+!select_reading(TempReadings, Celcius) : true <-
-
-	// Ask the agents for their references. (1 second timeout)
+@select_reading_task_plan
++!select_reading(TempReadings) : true <-
+    
+	// Ask the temperature_reader agents for their references. (1 second timeout)
 	.findall([Agent, Mission], commitment(Agent,Mission,_), CommitmentList);
 	for ( .member([Agent, Mission], CommitmentList) ) {
 		if (Mission == temperature_reading_mission) {
+			// We need to perform 'askAll' here, in case there are multiple certification agents
 			.send(Agent, askAll, certified_reputation(_,_,_,_));
 		}
 	};
 	.wait(1000);
 
-	// Get all the relevant ratings
+	// Get all relevant ratings
 	.findall([SourceAgent, TargetAgent, MessageContent, ITRating], interaction_trust(SourceAgent, TargetAgent, MessageContent, ITRating), ITList);
 	.findall([CertificationAgent, TargetAgent, MessageContent, CRRating], certified_reputation(CertificationAgent, TargetAgent, MessageContent, CRRating), CRList);
 	.findall([WitnessAgent, TargetAgent, MessageContent, WRRating], witness_reputation(WitnessAgent, TargetAgent, MessageContent, WRRating), WRList);
 
 	.print("Received ", .length(ITList), " interaction trust ratings, ", .length(CRList), " certified reputation ratings, and ", .length(WRList), " witness reputation ratings.");
 
-	// Calculate the final trust rating, based on different types of ratings
+	// Create an artifact of type TrustCalculator
 	makeArtifact("trustCalculator", "tools.TrustCalculator", [], TrustCalculatorId);
 
 	// Task 1 - Use this function to determine the most trustworthy temperature reading agent
 	// (based on the interaction trust ratings)
-	getHighest_IT_AVG_Agent(ITList, MostTrustworthyAgent)[artifact_id(TrustCalculatorId)];
+	// => IT_AVG = (ITRating1 + ITRating2 + ... + ITRatingN) / N
+	// getHighest_IT_AVG_Agent(ITList, MostTrustworthyAgent)[artifact_id(TrustCalculatorId)];
 
 	// Task 3 - Use this function to determine the most trustworthy temperature reading agent
 	// (base on the interaction trust ratings and certified reputation ratings)
+	// => IT_CR = 0.5 * (ITRating1 + ITRating2 + ... + ITRatingN) / N + 0.5 * (CRRating1 + CRRating2 + ... + CRRatingN) / N
+	// Note: Even it is not required to calculate the CR average, I decided to do it, because if
+	// there are multiple certification agents in the system, it is important to consider all of their ratings.
+	// If only 1 certification agent is present, the CR average will be equal to the CRRating, so it still works.
 	// getHighest_IT_CR_Agent(ITList, CRList, MostTrustworthyAgent)[artifact_id(TrustCalculatorId)];
 
 	// Task 4 - Use this function to determine the most trustworthy temperature reading agent
 	// (based on the interaction trust ratings and certified reputation ratings and witness reputation ratings)
-	// getHighest_IT_CR_WR_Agent(ITList, CRList, WRList, MostTrustworthyAgent)[artifact_id(TrustCalculatorId)];
+	getHighest_IT_CR_WR_Agent(ITList, CRList, WRList, MostTrustworthyAgent)[artifact_id(TrustCalculatorId)];
 
+	// Get the temperature reading of the most trustworthy agent
 	.print("Selected most trustworthy agent: ", MostTrustworthyAgent);
-	.findall([T, S], temperature(T)[source(S)], AllReadings);
-	.print("Received temperature readings: ", AllReadings);
-	for (.member([T, S], AllReadings)) {
-		.print(.isLiteral(S));
-		.print(.isLiteral(MostTrustworthyAgent));
-		.print(MostTrustworthyAgent);
-		if (SStr == MostTrustworthyAgent) {
-			.print("Most trustworthy temperature reading by agent: ", S, " - Temperature: ", T);
-			-+selectedTemp(T);
-		}
-	}.
+	getTempReadingByAgent(MostTrustworthyAgent, TempReadings, MostTrustworthyTempReading)[artifact_id(TrustCalculatorId)];
+	.print("Most trustworthy temperature reading by agent: ", MostTrustworthyAgent, " - Temperature:", MostTrustworthyTempReading);
+	-+selectedTemp(MostTrustworthyTempReading).
+
+
 
 /* 
  * Plan for reacting to the addition of the goal !manifest_temperature
@@ -137,14 +138,20 @@ robot_td("https://raw.githubusercontent.com/Interactions-HSG/example-tds/main/td
  * movement of the robotic arm. Then, manifests the temperature with the robotic arm
 */
 @manifest_temperature_plan 
-+!manifest_temperature : temperature(Celcius) & robot_td(Location) <-
-	.findall(TempReading, temperature(C), TempReadings);
-	!select_reading(TempReadings, Celcius);
++!manifest_temperature : robot_td(Location) <-
+
+	// Select a temperature reading based on various trust/reputation ratings
+	// Get all temperature readings, and pass them into the function !select_reading(TempReadings)
+	.findall([TempReading, Agent], temperature(TempReading)[source(Agent)], TempReadings);
+	!select_reading(TempReadings);
+
+	// Get the selected temperature of the most trustworthy agent
 	.findall(T, selectedTemp(T), SelectedTempList);
 	.nth(0, SelectedTempList, SelectedTemp);
+
 	.print("I will manifest the temperature: ", SelectedTemp);
 	makeArtifact("covnerter", "tools.Converter", [], ConverterId); // creates a converter artifact
-	convert(SelectedTemp, -20.00, 20.00, 200.00, 830.00, Degrees)[artifact_id(ConverterId)]; // converts Celcius to binary degress based on the input scale
+	convert(SelectedTemp, -20.00, 20.00, 200.00, 830.00, Degrees)[artifact_id(ConverterId)]; // converts SelectedTemp to binary degress based on the input scale
 	.print("Temperature Manifesting (moving robotic arm to): ", Degrees);
 
 	/* 

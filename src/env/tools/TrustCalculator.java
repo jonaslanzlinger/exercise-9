@@ -6,8 +6,10 @@ import java.util.HashMap;
 
 import cartago.*;
 
+// Artifact for calculating the trustworthiness of agents based on various trust/reputation ratings.
 public class TrustCalculator extends Artifact {
 
+  // Data structure for storing certification reputation ratings
   private class InteractionTrust {
 
     private String sourceAgent;
@@ -40,6 +42,7 @@ public class TrustCalculator extends Artifact {
     }
   }
 
+  // Data structure for storing certification reputation ratings
   private class CertificationReputation {
 
     private String certificationAgent;
@@ -72,6 +75,7 @@ public class TrustCalculator extends Artifact {
     }
   }
 
+  // Data structure for storing witness reputation ratings
   private class WitnessReputation {
 
     private String witnessAgent;
@@ -104,6 +108,7 @@ public class TrustCalculator extends Artifact {
     }
   }
 
+  // Creats an array of InteractionTrust objects from the given ITList
   private ArrayList<InteractionTrust> parseITList(Object[] ITList) {
     ArrayList<InteractionTrust> ITArrayList = new ArrayList<InteractionTrust>();
     for (Object entry : ITList) {
@@ -119,6 +124,7 @@ public class TrustCalculator extends Artifact {
     return ITArrayList;
   }
 
+  // Creats an array of CertificationReputation objects from the given CRList
   private ArrayList<CertificationReputation> parseCRList(Object[] CRList) {
     ArrayList<CertificationReputation> CRArrayList = new ArrayList<CertificationReputation>();
     for (Object entry : CRList) {
@@ -134,6 +140,7 @@ public class TrustCalculator extends Artifact {
     return CRArrayList;
   }
 
+  // Creats an array of WitnessReputation objects from the given WRList
   private ArrayList<WitnessReputation> parseWRList(Object[] WRList) {
     ArrayList<WitnessReputation> WRArrayList = new ArrayList<WitnessReputation>();
     for (Object entry : WRList) {
@@ -149,7 +156,7 @@ public class TrustCalculator extends Artifact {
     return WRArrayList;
   }
 
-  // Compute the average interaction trust rating for each target agent
+  // Computes the average interaction trust rating for each target agent
   private HashMap<String, Double> getAvgITRatingMap(ArrayList<InteractionTrust> ITArrayList) {
     HashMap<String, Double> avgITRatingMap = new HashMap<String, Double>();
     for (InteractionTrust ITObj : ITArrayList) {
@@ -212,6 +219,8 @@ public class TrustCalculator extends Artifact {
     return avgWRRatingMap;
   }
 
+  // Method for obtaining the agent with the highest average interaction trust
+  // rating
   @OPERATION
   public void getHighest_IT_AVG_Agent(Object[] ITList,
       OpFeedbackParam<Object> mostTrustworthyAgent) {
@@ -234,6 +243,7 @@ public class TrustCalculator extends Artifact {
     String mostTrustworthyAgentName = "";
     for (String targetAgent : avgITRatingMap.keySet()) {
       double avgITRating = avgITRatingMap.get(targetAgent);
+      System.out.println("Average IT rating for agent " + targetAgent + ": " + avgITRating);
       if (avgITRating > maxAvgITRating) {
         maxAvgITRating = avgITRating;
         mostTrustworthyAgentName = targetAgent;
@@ -247,6 +257,7 @@ public class TrustCalculator extends Artifact {
     System.out.println("=========================================");
   }
 
+  // Method for obtaining the agent with the highest IT_CR rating
   @OPERATION
   public void getHighest_IT_CR_Agent(Object[] ITList, Object[] CRList,
       OpFeedbackParam<String> mostTrustworthyAgent) {
@@ -259,7 +270,9 @@ public class TrustCalculator extends Artifact {
     ArrayList<CertificationReputation> CRArrayList = parseCRList(CRList);
 
     // Compute the most trustworthy agent based on the average interaction trust
-    // and the certification reputation: IT_CR = 0.5*IT_AVG + 0.5*CRRating
+    // and the certification reputation:
+    // => IT_CR = 0.5 * (ITRating1 + ITRating2 + ... + ITRatingN) / N + 0.5 *
+    // (CRRating1 + CRRating2 + ... + CRRatingN) / N
     HashMap<String, Double> avgITRatingMap = getAvgITRatingMap(ITArrayList);
     HashMap<String, Double> avgCRRatingMap = getAvgCRRatingMap(CRArrayList);
 
@@ -273,6 +286,7 @@ public class TrustCalculator extends Artifact {
       double avgITRating = avgITRatingMap.get(targetAgent);
       double avgCRRating = avgCRRatingMap.get(targetAgent);
       double IT_CRRating = 0.5 * avgITRating + 0.5 * avgCRRating;
+      System.out.println("IT_CR rating for agent " + targetAgent + ": " + IT_CRRating);
       if (IT_CRRating > maxIT_CRRating) {
         maxIT_CRRating = IT_CRRating;
         mostTrustworthyAgentName = targetAgent;
@@ -286,6 +300,7 @@ public class TrustCalculator extends Artifact {
     System.out.println("=========================================");
   }
 
+  // Method for obtaining the agent with the highest IT_CR_WR rating
   @OPERATION
   public void getHighest_IT_CR_WR_Agent(Object[] ITList, Object[] CRList,
       Object[] WRList, OpFeedbackParam<String> mostTrustworthyAgent) {
@@ -317,6 +332,7 @@ public class TrustCalculator extends Artifact {
       double avgCRRating = avgCRRatingMap.get(targetAgent);
       double avgWRRating = avgWRRatingMap.get(targetAgent);
       double IT_CR_WRRating = 1.0 / 3.0 * avgITRating + 1.0 / 3.0 * avgCRRating + 1.0 / 3.0 * avgWRRating;
+      System.out.println("IT_CR_WR rating for agent " + targetAgent + ": " + IT_CR_WRRating);
       if (IT_CR_WRRating > maxIT_CR_WRRating) {
         maxIT_CR_WRRating = IT_CR_WRRating;
         mostTrustworthyAgentName = targetAgent;
@@ -329,4 +345,30 @@ public class TrustCalculator extends Artifact {
         + maxIT_CR_WRRating);
     System.out.println("=========================================");
   }
+
+  // Method for obtaining the temperature reading of a given agent
+  @OPERATION
+  public void getTempReadingByAgent(String agentName, Object[] tempReadings, OpFeedbackParam<Double> tempReading) {
+
+    System.out.println("=========================================");
+    System.out.println("TrustCalculator Artifact: getTempReadingByAgent");
+
+    // Parsing the lists
+    ArrayList<Object> tempReadingList = new ArrayList<Object>(Arrays.asList(tempReadings));
+
+    // Find the temperature reading for the given agent
+    for (Object entry : tempReadingList) {
+      Object[] tempReadingEntry = (Object[]) entry;
+      double temp = ((Number) tempReadingEntry[0]).doubleValue();
+      String agent = (String) tempReadingEntry[1];
+      if (agent.equals(agentName)) {
+        tempReading.set(temp);
+        System.out.println("Temperature reading for agent " + agentName + ": " + temp);
+        break;
+      }
+    }
+
+    System.out.println("=========================================");
+  }
+
 }

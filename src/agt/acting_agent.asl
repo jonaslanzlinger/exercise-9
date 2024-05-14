@@ -84,10 +84,21 @@ robot_td("https://raw.githubusercontent.com/Interactions-HSG/example-tds/main/td
 @select_reading_task_plan
 +!select_reading(TempReadings) : true <-
     
+	// Ask the temperature_reader agents for their references. (1 second timeout)
+	.findall([Agent, Mission], commitment(Agent,Mission,_), CommitmentList);
+	for ( .member([Agent, Mission], CommitmentList) ) {
+		if (Mission == temperature_reading_mission) {
+			// We need to perform 'askAll' here, in case there are multiple certification agents
+			.send(Agent, askAll, certified_reputation(_,_,_,_));
+		}
+	};
+	.wait(1000);
+
 	// Get all relevant ratings
 	.findall([SourceAgent, TargetAgent, MessageContent, ITRating], interaction_trust(SourceAgent, TargetAgent, MessageContent, ITRating), ITList);
+	.findall([CertificationAgent, TargetAgent, MessageContent, CRRating], certified_reputation(CertificationAgent, TargetAgent, MessageContent, CRRating), CRList);
 
-	.print("Received ", .length(ITList), " interaction trust ratings.");
+	.print("Received ", .length(ITList), " interaction trust ratings, and ", .length(CRList), " certified reputation ratings.");
 
 	// Create an artifact of type TrustCalculator
 	makeArtifact("trustCalculator", "tools.TrustCalculator", [], TrustCalculatorId);
@@ -95,7 +106,15 @@ robot_td("https://raw.githubusercontent.com/Interactions-HSG/example-tds/main/td
 	// Task 1 - Use this function to determine the most trustworthy temperature reading agent
 	// (based on the interaction trust ratings)
 	// => IT_AVG = (ITRating1 + ITRating2 + ... + ITRatingN) / N
-	getHighest_IT_AVG_Agent(ITList, MostTrustworthyAgent)[artifact_id(TrustCalculatorId)];
+	// getHighest_IT_AVG_Agent(ITList, MostTrustworthyAgent)[artifact_id(TrustCalculatorId)];
+
+	// Task 3 - Use this function to determine the most trustworthy temperature reading agent
+	// (base on the interaction trust ratings and certified reputation ratings)
+	// => IT_CR = 0.5 * (ITRating1 + ITRating2 + ... + ITRatingN) / N + 0.5 * (CRRating1 + CRRating2 + ... + CRRatingN) / N
+	// Note: Even it is not required to calculate the CR average, I decided to do it, because if
+	// there are multiple certification agents in the system, it is important to consider all of their ratings.
+	// If only 1 certification agent is present, the CR average will be equal to the CRRating, so it still works.
+	getHighest_IT_CR_Agent(ITList, CRList, MostTrustworthyAgent)[artifact_id(TrustCalculatorId)];
 
 	// Get the temperature reading of the most trustworthy agent
 	.print("Selected most trustworthy agent: ", MostTrustworthyAgent);

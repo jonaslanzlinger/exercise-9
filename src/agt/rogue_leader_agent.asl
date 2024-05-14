@@ -21,7 +21,7 @@
   .add_plan({ +!read_temperature : true
     <-
       .print("Reading the temperature");
-      .print("Read temperature (Celcious): ", -2);
+      .print("Read temperature (Celcius): ", -2);
       .broadcast(tell, temperature(-2))}).
 
 /* Import behavior of sensing agent */

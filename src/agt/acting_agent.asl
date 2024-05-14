@@ -116,11 +116,17 @@ robot_td("https://raw.githubusercontent.com/Interactions-HSG/example-tds/main/td
 	// getHighest_IT_CR_WR_Agent(ITList, CRList, WRList, MostTrustworthyAgent)[artifact_id(TrustCalculatorId)];
 
 	.print("Selected most trustworthy agent: ", MostTrustworthyAgent);
-	.print(MostTrustworthyAgent);
-	.findall(TempReading, temperature(TempReading)[source(MostTrustworthyAgent)], TempList);
-	.nth(0, TempList, Temp);
-	.print("Selected most trustworthy temperature reading: ", Temp);
-	-+selectedTemp(Temp).
+	.findall([T, S], temperature(T)[source(S)], AllReadings);
+	.print("Received temperature readings: ", AllReadings);
+	for (.member([T, S], AllReadings)) {
+		.print(.isLiteral(S));
+		.print(.isLiteral(MostTrustworthyAgent));
+		.print(MostTrustworthyAgent);
+		if (SStr == MostTrustworthyAgent) {
+			.print("Most trustworthy temperature reading by agent: ", S, " - Temperature: ", T);
+			-+selectedTemp(T);
+		}
+	}.
 
 /* 
  * Plan for reacting to the addition of the goal !manifest_temperature

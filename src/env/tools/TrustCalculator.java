@@ -214,7 +214,7 @@ public class TrustCalculator extends Artifact {
 
   @OPERATION
   public void getHighest_IT_AVG_Agent(Object[] ITList,
-      OpFeedbackParam<String> mostTrustworthyAgent) {
+      OpFeedbackParam<Object> mostTrustworthyAgent) {
 
     System.out.println("=========================================");
     System.out.println("TrustCalculator Artifact: getHighest_IT_AVG_Agent");

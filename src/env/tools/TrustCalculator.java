@@ -75,6 +75,39 @@ public class TrustCalculator extends Artifact {
     }
   }
 
+  // Data structure for storing witness reputation ratings
+  private class WitnessReputation {
+
+    private String witnessAgent;
+    private String targetAgent;
+    private String messageContent;
+    private double WRRating;
+
+    public WitnessReputation(String witnessAgent, String targetAgent, String messageContent,
+        double WRRating) {
+      this.witnessAgent = witnessAgent;
+      this.targetAgent = targetAgent;
+      this.messageContent = messageContent;
+      this.WRRating = WRRating;
+    }
+
+    public String getWitnessAgent() {
+      return witnessAgent;
+    }
+
+    public String getTargetAgent() {
+      return targetAgent;
+    }
+
+    public String getMessageContent() {
+      return messageContent;
+    }
+
+    public double getWRRating() {
+      return WRRating;
+    }
+  }
+
   // Creats an array of InteractionTrust objects from the given ITList
   private ArrayList<InteractionTrust> parseITList(Object[] ITList) {
     ArrayList<InteractionTrust> ITArrayList = new ArrayList<InteractionTrust>();
@@ -105,6 +138,22 @@ public class TrustCalculator extends Artifact {
       CRArrayList.add(CRObj);
     }
     return CRArrayList;
+  }
+
+  // Creats an array of WitnessReputation objects from the given WRList
+  private ArrayList<WitnessReputation> parseWRList(Object[] WRList) {
+    ArrayList<WitnessReputation> WRArrayList = new ArrayList<WitnessReputation>();
+    for (Object entry : WRList) {
+      Object[] WR = (Object[]) entry;
+      String witnessAgent = (String) WR[0];
+      String targetAgent = (String) WR[1];
+      String messageContent = (String) WR[2];
+      Double WRRating = ((Number) WR[3]).doubleValue();
+      WitnessReputation WRObj = new WitnessReputation(witnessAgent, targetAgent, messageContent,
+          WRRating);
+      WRArrayList.add(WRObj);
+    }
+    return WRArrayList;
   }
 
   // Computes the average interaction trust rating for each target agent
@@ -150,6 +199,26 @@ public class TrustCalculator extends Artifact {
     return avgCRRatingMap;
   }
 
+  // Compute the average witness reputation rating for each target agent
+  private HashMap<String, Double> getAvgWRRatingMap(ArrayList<WitnessReputation> WRArrayList) {
+    HashMap<String, Double> avgWRRatingMap = new HashMap<String, Double>();
+    for (WitnessReputation WRObj : WRArrayList) {
+      String targetAgent = WRObj.getTargetAgent();
+      double WRRating = WRObj.getWRRating();
+      double sumWRRating = WRRating;
+      int countWRRating = 1;
+      for (WitnessReputation WRObj2 : WRArrayList) {
+        if (WRObj2.getTargetAgent().equals(targetAgent) && !WRObj2.equals(WRObj)) {
+          sumWRRating += WRObj2.getWRRating();
+          countWRRating++;
+        }
+      }
+      double avgWRRating = sumWRRating / countWRRating;
+      avgWRRatingMap.put(targetAgent, avgWRRating);
+    }
+    return avgWRRatingMap;
+  }
+
   // Method for obtaining the agent with the highest average interaction trust
   // rating
   @OPERATION
@@ -174,6 +243,7 @@ public class TrustCalculator extends Artifact {
     String mostTrustworthyAgentName = "";
     for (String targetAgent : avgITRatingMap.keySet()) {
       double avgITRating = avgITRatingMap.get(targetAgent);
+      System.out.println("Average IT rating for agent " + targetAgent + ": " + avgITRating);
       if (avgITRating > maxAvgITRating) {
         maxAvgITRating = avgITRating;
         mostTrustworthyAgentName = targetAgent;
@@ -216,6 +286,7 @@ public class TrustCalculator extends Artifact {
       double avgITRating = avgITRatingMap.get(targetAgent);
       double avgCRRating = avgCRRatingMap.get(targetAgent);
       double IT_CRRating = 0.5 * avgITRating + 0.5 * avgCRRating;
+      System.out.println("IT_CR rating for agent " + targetAgent + ": " + IT_CRRating);
       if (IT_CRRating > maxIT_CRRating) {
         maxIT_CRRating = IT_CRRating;
         mostTrustworthyAgentName = targetAgent;
@@ -226,6 +297,52 @@ public class TrustCalculator extends Artifact {
 
     System.out.println(
         "Most trustworthy agent: " + mostTrustworthyAgent.get() + " with IT_CR rating: " + maxIT_CRRating);
+    System.out.println("=========================================");
+  }
+
+  // Method for obtaining the agent with the highest IT_CR_WR rating
+  @OPERATION
+  public void getHighest_IT_CR_WR_Agent(Object[] ITList, Object[] CRList,
+      Object[] WRList, OpFeedbackParam<String> mostTrustworthyAgent) {
+
+    System.out.println("=========================================");
+    System.out.println("TrustCalculator Artifact: getHighest_IT_CR_WR_Agent");
+
+    // Parsing the lists
+    ArrayList<InteractionTrust> ITArrayList = parseITList(ITList);
+    ArrayList<CertificationReputation> CRArrayList = parseCRList(CRList);
+    ArrayList<WitnessReputation> WRArrayList = parseWRList(WRList);
+
+    // Compute the most trustworthy agent based on the average interaction trust
+    // and the certification reputation and the average witness reputation:
+    // IT_CR_WR = 1/3*IT_AVG + 1/3*CRRating + 1/3*WR_AVG
+    HashMap<String, Double> avgITRatingMap = getAvgITRatingMap(ITArrayList);
+    HashMap<String, Double> avgCRRatingMap = getAvgCRRatingMap(CRArrayList);
+    HashMap<String, Double> avgWRRatingMap = getAvgWRRatingMap(WRArrayList);
+
+    System.out.println("avgITRatingMap: " + avgITRatingMap.toString());
+    System.out.println("avgCRRatingMap: " + avgCRRatingMap.toString());
+    System.out.println("avgWRRatingMap: " + avgWRRatingMap.toString());
+
+    // Find the targetAgent with the highest IT_CR_WR rating
+    double maxIT_CR_WRRating = 0;
+    String mostTrustworthyAgentName = "";
+    for (String targetAgent : avgITRatingMap.keySet()) {
+      double avgITRating = avgITRatingMap.get(targetAgent);
+      double avgCRRating = avgCRRatingMap.get(targetAgent);
+      double avgWRRating = avgWRRatingMap.get(targetAgent);
+      double IT_CR_WRRating = 1.0 / 3.0 * avgITRating + 1.0 / 3.0 * avgCRRating + 1.0 / 3.0 * avgWRRating;
+      System.out.println("IT_CR_WR rating for agent " + targetAgent + ": " + IT_CR_WRRating);
+      if (IT_CR_WRRating > maxIT_CR_WRRating) {
+        maxIT_CR_WRRating = IT_CR_WRRating;
+        mostTrustworthyAgentName = targetAgent;
+      }
+    }
+
+    mostTrustworthyAgent.set(mostTrustworthyAgentName);
+
+    System.out.println("Most trustworthy agent: " + mostTrustworthyAgent.get() + " with IT_CR_WR rating: "
+        + maxIT_CR_WRRating);
     System.out.println("=========================================");
   }
 

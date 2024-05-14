@@ -97,8 +97,9 @@ robot_td("https://raw.githubusercontent.com/Interactions-HSG/example-tds/main/td
 	// Get all relevant ratings
 	.findall([SourceAgent, TargetAgent, MessageContent, ITRating], interaction_trust(SourceAgent, TargetAgent, MessageContent, ITRating), ITList);
 	.findall([CertificationAgent, TargetAgent, MessageContent, CRRating], certified_reputation(CertificationAgent, TargetAgent, MessageContent, CRRating), CRList);
+	.findall([WitnessAgent, TargetAgent, MessageContent, WRRating], witness_reputation(WitnessAgent, TargetAgent, MessageContent, WRRating), WRList);
 
-	.print("Received ", .length(ITList), " interaction trust ratings, and ", .length(CRList), " certified reputation ratings.");
+	.print("Received ", .length(ITList), " interaction trust ratings, ", .length(CRList), " certified reputation ratings, and ", .length(WRList), " witness reputation ratings.");
 
 	// Create an artifact of type TrustCalculator
 	makeArtifact("trustCalculator", "tools.TrustCalculator", [], TrustCalculatorId);
@@ -114,7 +115,11 @@ robot_td("https://raw.githubusercontent.com/Interactions-HSG/example-tds/main/td
 	// Note: Even it is not required to calculate the CR average, I decided to do it, because if
 	// there are multiple certification agents in the system, it is important to consider all of their ratings.
 	// If only 1 certification agent is present, the CR average will be equal to the CRRating, so it still works.
-	getHighest_IT_CR_Agent(ITList, CRList, MostTrustworthyAgent)[artifact_id(TrustCalculatorId)];
+	// getHighest_IT_CR_Agent(ITList, CRList, MostTrustworthyAgent)[artifact_id(TrustCalculatorId)];
+
+	// Task 4 - Use this function to determine the most trustworthy temperature reading agent
+	// (based on the interaction trust ratings and certified reputation ratings and witness reputation ratings)
+	getHighest_IT_CR_WR_Agent(ITList, CRList, WRList, MostTrustworthyAgent)[artifact_id(TrustCalculatorId)];
 
 	// Get the temperature reading of the most trustworthy agent
 	.print("Selected most trustworthy agent: ", MostTrustworthyAgent);
